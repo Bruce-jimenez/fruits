@@ -4,12 +4,15 @@ const mongoose = require("mongoose");
 const app = express();
 const port = 3000;
 const Fruit = require("./models/fruits.js");
+const methodOverride = require('method-override');
 // Set up middleware
 
 app.use((req, res, next) => {
   console.log("I run for all routes");
   next();
 });
+
+app.use(methodOverride('_method'));
 
 app.use(express.urlencoded({ extended: false }));
 
@@ -43,9 +46,26 @@ app.get("/fruits/new", (req, res) => {
 });
 
 // Delete - Delete this one record
+app.delete('/fruits/:id', (req, res)=>{
 
+        Fruit.findByIdAndRemove(req.params.id, (err, data)=>{
+          res.redirect('/fruits');//redirect back to fruits index
+
+    });
+});
 
 // Update - Modifying a record
+
+app.put('/fruits/:id', (req, res)=>{
+  if(req.body.readyToEat === 'on'){
+      req.body.readyToEat = true;
+  } else {
+      req.body.readyToEat = false;
+  }
+  Fruit.findByIdAndUpdate(req.params.id, req.body, (err, updatedFruit)=>{
+      res.redirect(`/fruits/${req.params.id}`);
+  });
+});
 
 // Create - send the filled form to db and create a new record
 app.post("/fruits", (req, res) => {
@@ -62,6 +82,22 @@ app.post("/fruits", (req, res) => {
   });
 });
 // Edit - Get the form with the record to update
+
+app.get('/fruits/:id/edit', (req, res)=>{
+  Fruit.findById(req.params.id, (err, foundFruit)=>{ //find the fruit
+    if(!err){
+      res.render(
+        'Edit',
+      {
+        fruit: foundFruit //pass in the found fruit so we can prefill the form
+      }
+    );
+  } else {
+    res.send({ msg: err.message })
+  }
+  });
+});
+
 
 // Show route - Show me a particular record
 app.get("/fruits/:indexOfFruitsArray", function (req, res) {
